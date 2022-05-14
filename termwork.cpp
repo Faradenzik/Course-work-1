@@ -1087,9 +1087,10 @@ void updatePlayer(vector<Person>& players)
 				cout << "\t5 - Количество матчей: " << players[index].games << "\n";
 				cout << "\t6 - Число заброшенных шайб: " << players[index].goals << "\n";
 				cout << "\t7 - Количество голевых передач: " << players[index].assists << "\n";
-				cout << "\t8 - Штрафных минут: " << players[index].banMins << "\n\n";
+				cout << "\t8 - Штрафных минут: " << players[index].banMins << "\n";
+				cout << "\t0 - Выход\n\n";
 
-				cout << "Что вы хотите изменить? Для отмены введите 0\n\n";
+				cout << "Что вы хотите изменить?\n\n";
 				int choice;
 				choice = inNum(0, 8);
 				bool glag;
