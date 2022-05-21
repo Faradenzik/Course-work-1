@@ -15,6 +15,7 @@ const string DataFilePlayers = "Players_Info.txt";
 bool adminstat;
 bool systemAdmin;
 bool UsOrPl;
+int curind;
 
 
 struct Account
@@ -43,60 +44,102 @@ struct Person
 	int banMins;
 };
 
-void palochki(int);
-string whoWrote(bool UsOrPl);
-int inNum(int min, int max);
 
+// Приветственное меню
 void hellomenu(vector<Account>&, vector<Person>&);
+// Перенаправление в меню администратора/пользователя
 void chooseMenu(vector<Account>&, vector<Person>&);
+// Регистрация
 void signup(vector<Account>&, vector<Person>&);
+// Авторизация
 void signin(vector<Account>&, vector<Person>&);
 
+// Проверка ввода пароля
 string enterPass();
+// Проверка ввода логина
 string checkLogPass();
+// Проверка ФИО на корректный ввод
 string checkNSP(bool&);
+// Выводит строку из "-"
+void palochki(int);
+// Проверка на ввод чисел из диапазона
+int inNum(int, int);
+// Проверка на число в строке
+bool checkForNum(string);
 
+// Добавление аккаунта Гл.администратора
 void addAdminAcc(vector<Account>&);
+// Удаление аккаунта с именем "admin"
 void delAdminAcc(vector<Account>&);
 
+
+// Содержание админ-меню
 void admin_menu();
+// Содержание польз.меню
 void user_menu();
 
+// Админ-меню
 void admin_core(vector<Account>&, vector<Person>&);
+// Польз.меню
 void user_core(vector<Account>&, vector<Person>&);
 
+// Чтение пользователей из файла
 void readFileUsers(vector<Account>&);
+// Чтение игроков из файла
 void readFilePlayers(vector<Person>&);
 
+// Запись пользователей в файл
 void writeFileUsers(vector<Account>&);
+// Запись игроков в файл
 void writeFilePlayers(vector<Person>&);
 
+// Вывод списка пользователей
 void writeUsersList(vector<Account>&);
+// Вывод списка игроков
 void writePlayersList(vector<Person>&);
+// Вывод определенного игрока
 void writeSomePlayers(vector<Person>&, int);
 
+// Шапка списка пользователей
 void showUsers(vector<Account>&);
+// Шапка списка игроков
 void showPlayers(vector<Person>&);
 
+// Добавление пользователя
 void addUser(vector<Account>&);
+// Добавление игрока
 void addPlayer(vector<Person>&);
 
+// Удаление пользователя
 void delUser(vector<Account>&);
+// Удаление игрока
 void delPlayer(vector<Person>&);
 
+// Редактирование пользователя
 void updUser(vector<Account>&);
+// Редактирование игрока
 void updatePlayer(vector<Person>&);
 
+// Индивидуальное задание
 void indTask(vector<Person>&);
 
+// Меню сортировки
 void sort(vector<Person>&, bool&);
-void sortSurname(vector<Person>& players);
-void sortNumOfPucks(vector<Person>& players);
-void sortMatch(vector<Person>& players);
+// Сортировка по фамилии
+void sortSurname(vector<Person>&);
+// Сортировка по количеству матчей
+void sortMatch(vector<Person>&);
+// Сортировка по количеству голов
+void sortGoals(vector<Person>&);
 
+
+// Меню поиска
 void search(vector<Person>&);
+// Поиск по фамилии
 void searchSurname(vector<Person>&);
+// Поиск по голам
 void searchGoals(vector<Person>&);
+// Поиск по количеству матчей
 void searchMatches(vector<Person>&);
 
 
@@ -114,67 +157,20 @@ int main()
 	hellomenu(users, players);
 }
 
-void palochki(int k)
-{
-	for (int i = 0; i < k; i++)
-		cout << "-";
-	cout << "\n";
-}
-string whoWrote(bool UsOrPl)
-{
-	if (UsOrPl == true)
-	{
-		return "игрока";
-	}
-	else
-	{
-		return "пользователя";
-	}
-}
-int inNum(int min, int max)
-{
-	double input;
-	while (true)
-	{
-		cin >> input;
-		if (cin.get() == '\n')
-		{
-			if (min == 21 && max == 2)
-				break;
-			else
-			{
-				if (input >= min && input <= max)
-					break;
-
-				else
-				{
-					cout << "Недопустимое значение.\n";
-				}
-			}
-		}
-		else
-		{
-			cin.clear();
-			cin.ignore(INT_MAX, '\n');
-			cout << "Введите число.\n";
-		}
-	}
-	return input;
-}
 
 void hellomenu(vector<Account>& users, vector<Person>& players)
 {
 	bool exit = true;
 	while (exit)
 	{
-		cout << "\t-----  Добро пожаловать  -----\n\n";
+		cout << "\t\t-----  Добро пожаловать  -----\n\n";
 		cout << "\t1 - Создать аккаунт\n";
 		cout << "\t2 - Войти в существующий\n";
 		cout << "\t0 - Выход\n\n";
 
 		int num;
 
-		num = inNum(0, 2);
+		num = inNum(-99999, 99999);
 
 		switch (num)
 		{
@@ -210,7 +206,6 @@ void signup(vector<Account>& users, vector<Person>& players)
 		cout << "Для возврата введите 0\n";
 
 		cout << "Придумайте логин для входа:\n";
-		
 		obmanka.login = checkLogPass();
 
 		if (obmanka.login == "0")
@@ -261,7 +256,7 @@ void signup(vector<Account>& users, vector<Person>& players)
 		}
 	}
 }
-void signin(vector<Account>& users, vector<Person>& players) // ДОДЕЛАТЬ
+void signin(vector<Account>& users, vector<Person>& players)
 {
 	bool er = true;
 	while (er)
@@ -296,13 +291,15 @@ void signin(vector<Account>& users, vector<Person>& players) // ДОДЕЛАТЬ
 					else
 						adminstat = false;
 
-					system("cls");
-					cout << "Добро пожаловать, " << log << "\n\n";
-					
 					if (log == users[0].login)
 						systemAdmin = true;
 					else
 						systemAdmin = false;
+
+					system("cls");
+					cout << "Добро пожаловать, " << log << "\n\n";
+					
+					curind = i;
 					
 					er = false;
 					chooseMenu(users, players);
@@ -327,7 +324,6 @@ string checkLogPass()
 
 	while (flag)
 	{
-		cout << "   - ";
 		cin >> str;
 
 		for (int i = 0; i < str.length(); i++)
@@ -405,12 +401,13 @@ string checkNSP(bool& flag)
 
 	for (int i = 0; i < str.length(); i++)
 	{
-		if(str[i] >= 'A' && str[i] <= 'Z' || str[i] >='a' && str[i] <='z' || str[i] == '0')
-		{ 
+		if(str[i] >= 'A' && str[i] <= 'Z' || str[i] >='a' && str[i] <= 'z' || str[i] >= 'А' && str[i] <= 'Я' 
+			|| str[i] >= 'а' && str[i] <= 'я')
+		{
 		}
 		else
 		{
-			cout << "Должны быть только латинские буквы!\n";
+			cout << "Должны быть только буквы!\n";
 			break;
 		}
 
@@ -419,7 +416,59 @@ string checkNSP(bool& flag)
 			flag = false;
 		}
 	}
+
+
 	return str;
+}
+void palochki(int k)
+{
+	for (int i = 0; i < k; i++)
+		cout << "-";
+	cout << "\n";
+}
+int inNum(int min, int max)
+{
+	double input;
+	while (true)
+	{
+		cout << ">> ";
+		cin >> input;
+		if (cin.get() == '\n')
+		{
+			if (min == 21 && max == 2)
+				break;
+			else
+			{
+				if (input >= min && input <= max)
+					break;
+
+				else
+				{
+					cout << "Выберите из списка.\n\n";
+				}
+			}
+		}
+		else
+		{
+			cin.clear();
+			cin.ignore(INT_MAX, '\n');
+			cout << "Введите число.\n\n";
+		}
+	}
+	return input;
+}
+bool checkForNum(string str)
+{
+	for (int i = 0; i <= str.length(); i++)
+	{
+		if (str[i] >= '0' && str[i] <= '9' || str[i] == '-')
+		{
+			if (i == str.length() - 1)
+				return true;
+		}
+		else
+			return false;
+	}
 }
 
 void addAdminAcc(vector<Account>& users)
@@ -486,7 +535,7 @@ void admin_core(vector<Account>& users, vector<Person>& players)
 	while (flag)
 	{
 		admin_menu();
-		item = inNum(0, 5);
+		item = inNum(-99999, 99999);
 
 		switch (item)
 		{
@@ -656,16 +705,35 @@ void writeUsersList(vector<Account>& users)
 {
 	cout << "\n";
 
-	cout << "| № |   Логин  |   Пароль  | Статус |\n";
-
-	palochki(37);
-
-	for (int i = 0; i < users.size(); i++)
+	if (systemAdmin == false)
 	{
-		cout << "|" << setw(3) << i + 1 << "|" << setw(10) << users[i].login << "|" << setw(11) << users[i].password << "|" << setw(8) << users[i].role << "|" << "\n";
+		cout << "\t| № |   Логин  |   Пароль  | Статус |\n";
+
+		cout << "\t";
 		palochki(37);
+
+		for (int i = 0; i < users.size(); i++)
+		{
+			cout << "\t|" << setw(3) << i + 1 << "|" << setw(10) << users[i].login << "|" << setw(11) << "********" << "|" << setw(8) << users[i].role << "|\n";
+			cout << "\t";
+			palochki(37);
+		}
 	}
-	cout << "\n";
+	else
+	{
+		cout << "\t| № |      Логин     |      Пароль    | Статус |\n";
+
+		cout << "\t";
+		palochki(48);
+
+		for (int i = 0; i < users.size(); i++)
+		{
+			cout << "\t|" << setw(3) << i + 1 << "|" << setw(16) << users[i].login << "|" << setw(16) << users[i].password << "|" << setw(8) << users[i].role << "|\n";
+			cout << "\t";
+			palochki(48);
+		}
+	}
+		cout << "\n";
 }
 void writePlayersList(vector<Person>& players)
 {
@@ -704,7 +772,7 @@ void showUsers(vector<Account>& users)
 	system("cls");
 	cout << "<--Admin panel\n\n";
 
-	cout << "\t-----  Список пользователей  -----\n\n";
+	cout << "\t\t-----  Список пользователей  -----\n\n";
 	writeUsersList(users);
 
 	cout << "Нажмите любую клавишу чтобы вернуться...";
@@ -722,7 +790,7 @@ void showPlayers(vector<Person>& players)
 		else
 			cout << "<--Меню\n\n";
 
-		cout << "\t\t\t\t-----  Список игроков  -----\n\n";
+		cout << "\t\t\t\t\t-----  Список игроков  -----\n\n";
 		writePlayersList(players);
 
 		sort(players, flag);
@@ -739,22 +807,28 @@ void addUser(vector<Account>& users)
 		system("cls");
 		cout << "<--Admin panel\n\n";
 
-		cout << "\t-----  Добавление  -----\n\n";
+		cout << "\t\t-----  Добавление  -----\n\n";
 
 		writeUsersList(users);
 		cout << "Чтобы вернуться введите 0\n\n";
 
 		cout << "Введите логин: ";
-		obmanka.login = checkLogPass();
+		cin >> obmanka.login;
 
 		if (obmanka.login != "0")
 		{
 			cout << "Введите пароль: ";
-			obmanka.password = checkLogPass();
+			cin >> obmanka.password;
 
-			cout << "Введите роль: ";
-			cin >> obmanka.role;
-
+			if (systemAdmin == true)
+			{
+				cout << "Введите роль: ";
+				obmanka.role = inNum(-100, 100);
+			}
+			else
+			{
+				obmanka.role = 0;
+			}
 			users.push_back(obmanka);
 
 			writeFileUsers(users);
@@ -783,12 +857,11 @@ void addPlayer(vector<Person>& players)
 			cout << "<--Меню\n\n";
 		}
 
-		cout << "\t\t\t\t-----  Добавление  -----\n";
-		palochki(100);
+		cout << "\t\t\t\t\t-----  Добавление  -----\n\n";
 
 		writePlayersList(players);
 
-		cout << "Чтобы вернуться введите 0\n\n";
+		cout << "Чтобы вернуться введите \"exit\"\n\n";
 
 		bool blag = true;
 		while (blag)
@@ -797,7 +870,7 @@ void addPlayer(vector<Person>& players)
 			obmanka.surname = checkNSP(blag);
 		}
 
-		if (obmanka.surname != "0")
+		if (obmanka.surname != "exit")
 		{
 			blag = true;
 			while (blag)
@@ -819,16 +892,16 @@ void addPlayer(vector<Person>& players)
 			cout << "Год ";
 			obmanka.birth.year = inNum(1922, 2004);
 
-			cout << "Введите кол-во сыгранных матчей: ";
+			cout << "Введите кол-во сыгранных матчей ";
 			obmanka.games = inNum(0, 1000);
 
-			cout << "Введите число заброшенных шайб: ";
+			cout << "Введите число заброшенных шайб ";
 			obmanka.goals = inNum(0, 1000);
 
-			cout << "Введите кол-во голевых передач: ";
+			cout << "Введите кол-во голевых передач ";
 			obmanka.assists = inNum(0, 1000);
 
-			cout << "Введите кол-во штрафных минут: ";
+			cout << "Введите кол-во штрафных минут ";
 			obmanka.banMins = inNum(0, 1000);
 
 			players.push_back(obmanka);
@@ -851,7 +924,7 @@ void delUser(vector<Account>& users)
 		system("cls");
 		cout << "<-- Admin panel\n\n";
 
-		cout << "\t-----  Удаление  -----\n\n";
+		cout << "\t\t-----  Удаление  -----\n\n";
 
 		writeUsersList(users);
 		cout << "Какого пользователя вы хотите удалить? Чтобы вернуться введите 0\n\n";
@@ -876,9 +949,9 @@ void delUser(vector<Account>& users)
 
 				if (YN == "Y" || YN == "y")
 				{
-					if (systemAdmin == false && users[index].role == 1 || index == 0)
+					if (systemAdmin == false && users[index].role == 1 && index != curind)
 					{
-						cout << "Вы не можете удалить администратора.\n";
+						cout << "Вы не можете удалить другого администратора.\n\n";
 						cout << "Нажмите любую клавишу чтобы вернуться...";
 						_getch();
 						break;
@@ -888,6 +961,7 @@ void delUser(vector<Account>& users)
 						users.erase(users.begin() + index);
 
 						writeFileUsers(users);
+
 						break;
 					}
 				}
@@ -914,11 +988,10 @@ void delPlayer(vector<Person>& players)
 		else
 			cout << "<-- Меню\n\n";
 
-		cout << "\t\t\t\t-----  Удаление  -----\n";
-		palochki(100);
+		cout << "\t\t\t\t\t-----  Удаление  -----\n";
 
 		writePlayersList(players);
-		cout << "Какого игрока вы хотите удалить? Для выхода введите 0\n\n";
+		cout << "Какого игрока вы хотите удалить? Чтобы вернуться введите 0\n\n";
 
 		int index;
 		index = inNum(0, players.size());
@@ -955,10 +1028,6 @@ void delPlayer(vector<Person>& players)
 				}
 			}
 
-			players.erase(players.begin() + index);
-
-			writeFilePlayers(players);
-
 			break;
 		}
 	}
@@ -971,7 +1040,7 @@ void updUser(vector<Account>& users)
 	{
 		system("cls");
 		cout << "<-- Admin panel\n\n";
-		cout << "\t-----  Редактирование  -----\n\n";
+		cout << "\t\t-----  Редактирование  -----\n\n";
 
 		writeUsersList(users);
 		cout << "Какого пользователя вы хотите редактировать? Чтобы вернуться введите 0\n\n";
@@ -989,11 +1058,20 @@ void updUser(vector<Account>& users)
 			index--;
 
 			bool blag = true;
+
+			if (systemAdmin == false && users[index].role == 1 && index != curind)
+			{
+				cout << "Вы не можете редактировать другого администратора.\n\n";
+				cout << "Нажмите любую клавишу чтобы вернуться...";
+				_getch();
+				blag = false;
+			}
+
 			while (blag)
 			{
 				system("cls");
 				cout << "<--Редактирование\n\n";
-				cout << "\t-----  Данные " << users[index].login << "  -----\n\n";
+				cout << "\t-----  Данные пользователя  -----\n\n";
 
 				cout << "\t1 - Логин: " << users[index].login << "\n";
 				cout << "\t2 - Пароль: " << users[index].password << "\n";
@@ -1012,24 +1090,21 @@ void updUser(vector<Account>& users)
 				}
 				case 1:
 				{
-					cout << "Старый логин: " << users[index].login << "\n";
-					cout << "Новый логин:\n";
+					cout << "Новый логин >> ";
 					cin >> users[index].login;
 
 					break;
 				}
 				case 2:
 				{
-					cout << "Старый пароль: " << users[index].password << "\n";
-					cout << "Новый пароль:\n";
+					cout << "Новый пароль: >> ";
 					cin >> users[index].password;
 
 					break;
 				}
 				case 3:
 				{
-					cout << "Старая роль: " << users[index].role << "\n";
-					cout << "Новая роль:\n";
+					cout << "Новая роль ";
 					users[index].role = inNum(0,1);
 
 					break;
@@ -1054,7 +1129,7 @@ void updatePlayer(vector<Person>& players)
 		else
 			cout << "<-- Меню\n\n";
 
-		cout << "\t\t\t\t-----  Редактирование  -----\n\n";
+		cout << "\t\t\t\t\t-----  Редактирование  -----\n\n";
 
 		writePlayersList(players);
 
@@ -1078,7 +1153,7 @@ void updatePlayer(vector<Person>& players)
 				system("cls");
 				cout << "<-- Редактирование\n\n";
 				
-				cout << "\t----- Данные игрока  -----\n\n";
+				cout << "\t\t----- Данные игрока  -----\n\n";
 
 				cout << "\t1 - Фамилия: " << players[index].surname << "\n";
 				cout << "\t2 - Имя: " << players[index].name << "\n";
@@ -1088,9 +1163,9 @@ void updatePlayer(vector<Person>& players)
 				cout << "\t6 - Число заброшенных шайб: " << players[index].goals << "\n";
 				cout << "\t7 - Количество голевых передач: " << players[index].assists << "\n";
 				cout << "\t8 - Штрафных минут: " << players[index].banMins << "\n";
-				cout << "\t0 - Выход\n\n";
+				cout << "\t0 - Назад\n\n";
 
-				cout << "Что вы хотите изменить?\n\n";
+				cout << "Что вы хотите изменить?\n";
 				int choice;
 				choice = inNum(0, 8);
 				bool glag;
@@ -1104,15 +1179,16 @@ void updatePlayer(vector<Person>& players)
 					glag = true;
 					while (glag)
 					{
-						cout << "Новая фамилия: ";
+						cout << "\nНовая фамилия: ";
 						players[index].surname = checkNSP(glag);
 					}
+
 					break;
 				case 2:
 					glag = true;
 					while (glag)
 					{
-						cout << "Новое имя: ";
+						cout << "\nНовое имя: ";
 						players[index].name = checkNSP(glag);
 					}
 					break;
@@ -1120,38 +1196,70 @@ void updatePlayer(vector<Person>& players)
 					glag = true;
 					while (glag)
 					{
-						cout << "Новое отчество: ";
+						cout << "\nНовое отчество: ";
 						players[index].patronymic = checkNSP(glag);
 					}
+
 					break;
 				case 4:
-					cout << "Новая дата рождения:(вводите через пробел)\n";
-					cout << players[index].birth.day << "." << players[index].birth.month << "." << players[index].birth.year << " --> ";
-					cin >> players[index].birth.day >> players[index].birth.month >> players[index].birth.year;
+					cout << "\nНовая дата рождения:\n";
+
+					cout << "День(1-31) ";
+					players[index].birth.day = inNum(1, 31);
+
+					cout << "Месяц(1-12) ";
+					players[index].birth.month = inNum(1, 12);
+
+					cout << "Год(1922-2004) ";
+					players[index].birth.year = inNum(1922, 2022);
 
 					break;
 				case 5:
-					cout << "Новое количество матчей:\n";
-					cout << players[index].games << " --> ";
-					players[index].games = inNum(0, 1000);
+					cout << "\nНовое количество матчей:\n";
+					while (true)
+					{
+						players[index].games = inNum(-999999, 999999);
+						if (players[index].games >= 0)
+							break;
+						else
+							cout << "Количество не может быть отрицательным!";
+					}
 
 					break;
 				case 6:
-					cout << "Новое число голов:\n";
-					cout << players[index].goals << " --> ";
-					players[index].goals = inNum(0, 1000);
+					cout << "\nНовое количество голов:\n";
+					while (true)
+					{
+						players[index].goals = inNum(-999999, 999999);
+						if (players[index].goals >= 0)
+							break;
+						else
+							cout << "Количество не может быть отрицательным!";
+					}
 
 					break;
 				case 7:
-					cout << "Новое число голевых передач:\n";
-					cout << players[index].assists << " --> ";
-					players[index].assists = inNum(0, 1000);
+					cout << "\nНовое количество голевых передач:\n";
+					while (true)
+					{
+						players[index].assists = inNum(-999999, 999999);
+						if (players[index].assists >= 0)
+							break;
+						else
+							cout << "Количество не может быть отрицательным!";
+					}
 
 					break;
 				case 8:
-					cout << "Новое кол-во штрафных минут:\n";
-					cout << players[index].banMins << " --> ";
-					players[index].banMins = inNum(0, 1000);
+					cout << "\nНовое количество штрафных минут:\n";
+					while (true)
+					{
+						players[index].banMins = inNum(-999999, 999999);
+						if (players[index].banMins >= 0)
+							break;
+						else
+							cout << "Количество не может быть отрицательным!";
+					}
 
 					break;
 				}
@@ -1259,7 +1367,7 @@ void sort(vector<Person>& players, bool& flag)
 		sortMatch(players);
 		break;
 	case 3:
-		sortNumOfPucks(players);
+		sortGoals(players);
 		break;
 	}
 }
@@ -1275,6 +1383,8 @@ void sortSurname(vector<Person>& players)
 			}
 		}
 	}
+
+	writeFilePlayers(players);
 }
 void sortMatch(vector<Person>& players)
 {
@@ -1286,8 +1396,10 @@ void sortMatch(vector<Person>& players)
 				swap(players[j], players[i]);
 		}
 	}
+
+	writeFilePlayers(players);
 }
-void sortNumOfPucks(vector<Person>& players)
+void sortGoals(vector<Person>& players)
 {
 	for (int i = 0; i < players.size() - 1; i++)
 	{
@@ -1297,6 +1409,8 @@ void sortNumOfPucks(vector<Person>& players)
 				swap(players[j], players[i]);
 		}
 	}
+
+	writeFilePlayers(players);
 }
 
 void search(vector<Person>& players)
@@ -1311,7 +1425,7 @@ void search(vector<Person>& players)
 		else
 			cout << "<--Меню\n\n";
 
-		cout << "\t-----  Поиск по параметрам -----\n\n";
+		cout << "\t\t-----  Поиск по параметрам -----\n\n";
 
 		cout << "\t1 - Поиск по фамилии\n";
 		cout << "\t2 - Поиск по голам\n";
@@ -1352,13 +1466,17 @@ void searchSurname(vector<Person>& players)
 		cout << "<--Поиск по параметрам\n\n";
 		cout << "\t-----  Поиск по фамилии  -----\n\n";
 
-		cout << "Чтобы вернуться введите 0\n\n";
+		cout << "Чтобы вернуться введите \"exit\"\n\n";
 
 		string surname;
-		cout << "Введите фамилию игрока: ";
-		cin >> surname;
+		bool blag = true;
+		while (blag)
+		{
+			cout << "Введите фамилию игрока: ";
+			surname = checkNSP(blag);
+		}
 
-		if (surname == "0")
+		if (surname == "exit")
 			flag = false;
 		else
 		{
@@ -1366,9 +1484,9 @@ void searchSurname(vector<Person>& players)
 
 
 			system("cls");
-			cout << "<--Поиск по параметрам\n";
+			cout << "<--Поиск по параметрам\n\n";
 
-			cout << "\t\t\t\t-----  Список игроков  -----\n\n";
+			cout << "\t\t\t\t\t-----  Список игроков  -----\n\n";
 
 			int n = 0;
 			bool match = false;
@@ -1412,7 +1530,6 @@ void searchSurname(vector<Person>& players)
 void searchGoals(vector<Person>& players)
 {
 	bool flag = true;
-
 	while (flag)
 	{
 		system("cls");
@@ -1420,20 +1537,27 @@ void searchGoals(vector<Person>& players)
 		cout << "<--Поиск по параметрам\n\n";
 		cout << "\t-----  Поиск по количеству забитых голов  -----\n\n";
 
-		cout << "Чтобы вернуться введите 0\n";
+		cout << "Чтобы вернуться введите \"exit\"\n";
 
 		int goals;
-		cout << "Введите количество голов: ";
-		goals = inNum(0, 1000);
+		cout << "Введите количество голов:\n";
 
-		if (goals == 0)
-			flag = false;
-		else
+		string vvod;
+		cout << ">> ";
+		cin >> vvod;
+
+		if (vvod == "exit")
 		{
+			flag = false;
+		}
+		else if (checkForNum(vvod) == true)
+		{
+			int goals = stoi(vvod);
+
 			system("cls");
 			cout << "<--Поиск по параметрам\n\n";
 
-			cout << "\t\t\t\t-----  Список игроков  -----\n\n";
+			cout << "\t\t\t\t\t-----  Список игроков  -----\n\n";
 
 			int n = 0;
 
@@ -1465,51 +1589,57 @@ void searchGoals(vector<Person>& players)
 void searchMatches(vector<Person>& players)
 {
 	bool flag = true;
-	system("cls");
-
-	cout << "<--Поиск по параметрам\n\n";
-	cout << "\t-----  Поиск по количеству матчей  -----\n\n";
-
-	cout<<"Для отмены введите 0\n";
-
-	int games;
-	cout << "Введите количество матчей: ";
-	games = inNum(0, 1000);
-
-	if (games == 0)
-		flag = false;
-
 	while (flag)
 	{
 		system("cls");
+
 		cout << "<--Поиск по параметрам\n\n";
+		cout << "\t-----  Поиск по количеству матчей  -----\n\n";
 
-		cout << "\t\t\t\t-----  Список игроков  -----\n\n";
+		cout << "Для отмены введите \"exit\"\n";
+		cout << "Введите количество матчей:\n";
 
-		int n = 0;
+		string vvod;
+		cout << ">> ";
+		cin >> vvod;
 
-		cout << "| № |   Фамилия   |     Имя    |    Отчество   |  Дата рожд. | Матчи | Голы | Гол. пер. | Штр. мин. |\n";
-		
-		palochki(101);
-
-		for (int i = 0; i < players.size(); i++)
+		if (vvod == "exit")
 		{
-			if (players[i].games == games)
+			flag = false;
+		}
+		else if (checkForNum(vvod) == true)
+		{
+			int games = stoi(vvod);
+
+			system("cls");
+			cout << "<--Поиск по параметрам\n\n";
+
+			cout << "\t\t\t\t\t-----  Список игроков  -----\n\n";
+
+			int n = 0;
+
+			cout << "| № |   Фамилия   |     Имя    |    Отчество   |  Дата рожд. | Матчи | Голы | Гол. пер. | Штр. мин. |\n";
+
+			palochki(101);
+
+			for (int i = 0; i < players.size(); i++)
 			{
-				writeSomePlayers(players, i);
-				n++;
+				if (players[i].games == games)
+				{
+					writeSomePlayers(players, i);
+					n++;
+				}
 			}
+
+			if (n == 0)
+			{
+				cout << "\nИгроков с таким количеством матчей не найдено\n";
+			}
+
+			cout << "Нажмите любую клавишу чтобы вернутсья...";
+
+			_getch();
+
 		}
-
-		if (n == 0)
-		{
-			cout << "\nИгроков с таким количеством матчей не найдено\n";
-		}
-
-		cout << "Нажмите любую клавишу чтобы вернутсья...";
-
-		_getch();
-
-		flag = false;
 	}
 }
