@@ -14,7 +14,6 @@ const string DataFileUsers = "Accounts_Info.txt";
 const string DataFilePlayers = "Players_Info.txt";
 bool adminstat;
 bool systemAdmin;
-bool UsOrPl;
 int curind;
 
 
@@ -45,102 +44,61 @@ struct Person
 };
 
 
-// Приветственное меню
-void hellomenu(vector<Account>&, vector<Person>&);
-// Перенаправление в меню администратора/пользователя
-void chooseMenu(vector<Account>&, vector<Person>&);
-// Регистрация
-void signup(vector<Account>&, vector<Person>&);
-// Авторизация
-void signin(vector<Account>&, vector<Person>&);
+void hellomenu(vector<Account>&, vector<Person>&);// Приветственное меню
+void chooseMenu(vector<Account>&, vector<Person>&);// Перенаправление в меню администратора/пользователя
+void signup(vector<Account>&, vector<Person>&);// Регистрация
+void signin(vector<Account>&, vector<Person>&);// Авторизация
 
-// Проверка ввода пароля
-string enterPass();
-// Проверка ввода логина
-string checkLogPass();
-// Проверка ФИО на корректный ввод
-string checkNSP(bool&);
-// Выводит строку из "-"
-void palochki(int);
-// Проверка на ввод чисел из диапазона
-int inNum(int, int);
-// Проверка на число в строке
-bool checkForNum(string);
+string enterPass();// Проверка ввода пароля
+string checkLogPass();// Проверка ввода логина
+string checkNSP(bool&);// Проверка ФИО на корректный ввод
+void palochki(int);// Выводит строку из "-"
+int inNum(int, int);// Проверка на ввод чисел из диапазона
+bool checkForNum(string);// Проверка на число в строке
 
-// Добавление аккаунта Гл.администратора
-void addAdminAcc(vector<Account>&);
-// Удаление аккаунта с именем "admin"
-void delAdminAcc(vector<Account>&);
+void addAdminAcc(vector<Account>&);// Добавление аккаунта Гл.администратора
+void delAdminAcc(vector<Account>&);// Удаление аккаунта с именем "admin"
 
+void admin_menu();// Содержание админ-меню
+void user_menu();// Содержание польз.меню
 
-// Содержание админ-меню
-void admin_menu();
-// Содержание польз.меню
-void user_menu();
+void admin_core(vector<Account>&, vector<Person>&);// Админ-меню
+void user_core(vector<Account>&, vector<Person>&);// Польз.меню
 
-// Админ-меню
-void admin_core(vector<Account>&, vector<Person>&);
-// Польз.меню
-void user_core(vector<Account>&, vector<Person>&);
+void readFileUsers(vector<Account>&);// Чтение пользователей из файла
+void readFilePlayers(vector<Person>&);// Чтение игроков из файла
 
-// Чтение пользователей из файла
-void readFileUsers(vector<Account>&);
-// Чтение игроков из файла
-void readFilePlayers(vector<Person>&);
+void writeFileUsers(vector<Account>&);// Запись пользователей в файл
+void writeFilePlayers(vector<Person>&);// Запись игроков в файл
 
-// Запись пользователей в файл
-void writeFileUsers(vector<Account>&);
-// Запись игроков в файл
-void writeFilePlayers(vector<Person>&);
+void writeUsersList(vector<Account>&);// Вывод списка пользователей
+void writePlayersList(vector<Person>&);// Вывод списка игроков
+void writeSomePlayers(vector<Person>&, int);// Вывод определенного игрока
 
-// Вывод списка пользователей
-void writeUsersList(vector<Account>&);
-// Вывод списка игроков
-void writePlayersList(vector<Person>&);
-// Вывод определенного игрока
-void writeSomePlayers(vector<Person>&, int);
+void showUsers(vector<Account>&);// Шапка списка пользователей
+void showPlayers(vector<Person>&);//  Список и сортировка игроков
 
-// Шапка списка пользователей
-void showUsers(vector<Account>&);
-// Шапка списка игроков
-void showPlayers(vector<Person>&);
+void addUser(vector<Account>&);// Добавление пользователя
+void addPlayer(vector<Person>&);// Добавление игрока
 
-// Добавление пользователя
-void addUser(vector<Account>&);
-// Добавление игрока
-void addPlayer(vector<Person>&);
+void delUser(vector<Account>&);// Удаление пользователя
+void delPlayer(vector<Person>&);// Удаление игрока
 
-// Удаление пользователя
-void delUser(vector<Account>&);
-// Удаление игрока
-void delPlayer(vector<Person>&);
+void updUser(vector<Account>&);// Редактирование пользователя
+void updatePlayer(vector<Person>&);// Редактирование игрока
 
-// Редактирование пользователя
-void updUser(vector<Account>&);
-// Редактирование игрока
-void updatePlayer(vector<Person>&);
+void indTask(vector<Person>&);// Индивидуальное задание
 
-// Индивидуальное задание
-void indTask(vector<Person>&);
-
-// Меню сортировки
-void sort(vector<Person>&, bool&);
-// Сортировка по фамилии
-void sortSurname(vector<Person>&);
-// Сортировка по количеству матчей
-void sortMatch(vector<Person>&);
-// Сортировка по количеству голов
-void sortGoals(vector<Person>&);
+void sort(vector<Person>&, bool&);// Меню сортировки
+void sortSurname(vector<Person>&);// Сортировка по фамилии
+void sortMatch(vector<Person>&);// Сортировка по количеству матчей
+void sortGoals(vector<Person>&);// Сортировка по количеству голов
 
 
-// Меню поиска
-void search(vector<Person>&);
-// Поиск по фамилии
-void searchSurname(vector<Person>&);
-// Поиск по голам
-void searchGoals(vector<Person>&);
-// Поиск по количеству матчей
-void searchMatches(vector<Person>&);
+void search(vector<Person>&);// Меню поиска
+void searchSurname(vector<Person>&);// Поиск по фамилии
+void searchGoals(vector<Person>&);// Поиск по количеству голов
+void searchMatches(vector<Person>&);// Поиск по количеству матчей
 
 
 int main()
@@ -160,8 +118,8 @@ int main()
 
 void hellomenu(vector<Account>& users, vector<Person>& players)
 {
-	bool exit = true;
-	while (exit)
+	bool flag = true;
+	while (flag)
 	{
 		cout << "\t\t-----  Добро пожаловать  -----\n\n";
 		cout << "\t1 - Создать аккаунт\n";
@@ -170,7 +128,7 @@ void hellomenu(vector<Account>& users, vector<Person>& players)
 
 		int num;
 
-		num = inNum(-99999, 99999);
+		num = inNum(0, 2);
 
 		switch (num)
 		{
@@ -181,9 +139,10 @@ void hellomenu(vector<Account>& users, vector<Person>& players)
 			signin(users, players);
 			break;
 		case 0:
-			exit = false;
+			flag = false;
 			break;
 		}
+
 		system("cls");
 	}
 }
@@ -258,8 +217,9 @@ void signup(vector<Account>& users, vector<Person>& players)
 }
 void signin(vector<Account>& users, vector<Person>& players)
 {
-	bool er = true;
-	while (er)
+	bool flag = true;
+	int count = 0;
+	while (flag)
 	{
 		system("cls");
 		cout << "<--Приветствие\n\n";
@@ -274,7 +234,7 @@ void signin(vector<Account>& users, vector<Person>& players)
 		if (log == "0")
 		{
 			system("cls");
-			er = false;
+			flag = false;
 		}
 		else
 		{
@@ -301,12 +261,21 @@ void signin(vector<Account>& users, vector<Person>& players)
 					
 					curind = i;
 					
-					er = false;
+					flag = false;
 					chooseMenu(users, players);
 					break;
 				}
 				else if (i == users.size() - 1)
 				{
+					count++;
+					if (count == 3)
+					{
+						cout << "\nСлишком много неверных попыток!\n";
+						_getch();
+						flag = false;
+						system("cls");
+						break;
+					}
 					cout << "\nПроверьте правильность данных\n";
 					cout << "Нажмите любую клавишу чтобы вернуться...";
 					_getch();
@@ -528,7 +497,6 @@ void user_menu()
 
 void admin_core(vector<Account>& users, vector<Person>& players)
 {
-	UsOrPl = false;
 	bool flag = true;
 	int item;
 
@@ -566,7 +534,6 @@ void admin_core(vector<Account>& users, vector<Person>& players)
 }
 void user_core(vector<Account>& users, vector<Person>& players)
 {
-	UsOrPl = true;
 	bool flag = true;
 	int item;
 
