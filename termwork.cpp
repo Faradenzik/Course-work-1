@@ -6,21 +6,26 @@
 #include <iomanip>
 #include <windows.h>
 #include <algorithm>
+#include "sha256.h"
 
 using namespace std;
 
 
 const string DataFileUsers = "Accounts_Info.txt";
 const string DataFilePlayers = "Players_Info.txt";
-bool adminstat;
-bool systemAdmin;
-int curind;
+bool ADMIN_STAT;
+bool SYSTEM_ADMIN;
+int CURR_IND;
+const int SALT_SIZE = 16; // длина соли
+const int SYMBOLS_SIZE = 62; // набор символов, из которых генерируется соль
+
 
 
 struct Account
 {
 	string login;
 	string password;
+	string salt;
 	int role;
 };
 
@@ -54,7 +59,7 @@ string checkLogPass();// Проверка ввода логина
 string checkNSP(bool&);// Проверка ФИО на корректный ввод
 void palochki(int);// Выводит строку из "-"
 int inNum(int, int);// Проверка на ввод чисел из диапазона
-bool checkForNum(string);// Проверка на число в строке
+bool isNumStr(string);// Проверка на число в строке
 
 void addAdminAcc(vector<Account>&);// Добавление аккаунта Гл.администратора
 void delAdminAcc(vector<Account>&);// Удаление аккаунта с именем "admin"
@@ -73,7 +78,8 @@ void writeFilePlayers(vector<Person>&);// Запись игроков в фай�
 
 void writeUsersList(vector<Account>&);// Вывод списка пользователей
 void writePlayersList(vector<Person>&);// Вывод списка игроков
-void writeSomePlayers(vector<Person>&, int);// Вывод определенного игрока
+void writeSomePlayer(vector<Person>&, int);// Вывод определенного игрока
+void writeIndTaskPlayer(vector<Person>&, int);// Вывод игроков для Индивидуального задания
 
 void showUsers(vector<Account>&);// Шапка списка пользователей
 void showPlayers(vector<Person>&);//  Список и сортировка игроков
@@ -94,11 +100,13 @@ void sortSurname(vector<Person>&);// Сортировка по фамилии
 void sortMatch(vector<Person>&);// Сортировка по количеству матчей
 void sortGoals(vector<Person>&);// Сортировка по количеству голов
 
-
 void search(vector<Person>&);// Меню поиска
 void searchSurname(vector<Person>&);// Поиск по фамилии
 void searchGoals(vector<Person>&);// Поиск по количеству голов
 void searchMatches(vector<Person>&);// Поиск по количеству матчей
+
+string generateSalt(int);
+string getSymbolsForSalt();
 
 
 int main()
@@ -148,7 +156,7 @@ void hellomenu(vector<Account>& users, vector<Person>& players)
 }
 void chooseMenu(vector<Account>& users, vector<Person>& players)
 {
-	if (adminstat == true)
+	if (ADMIN_STAT == true)
 		admin_core(users, players);
 	else
 		user_core(users, players);
@@ -190,7 +198,7 @@ void signup(vector<Account>& users, vector<Person>& players)
 			{
 				flag = false;
 				cout << "\nПридумайте пароль:\n";
-				
+
 				obmanka.password = checkLogPass();
 
 				if (obmanka.password == "0")
@@ -201,13 +209,15 @@ void signup(vector<Account>& users, vector<Person>& players)
 				else
 				{
 					obmanka.role = 0;
+					obmanka.salt = generateSalt(SALT_SIZE); // генерируем соль
+					obmanka.password = sha256(obmanka.password + obmanka.salt);
 
 					users.push_back(obmanka);
 
 					writeFileUsers(users);
 
 					system("cls");
-					adminstat = false;
+					ADMIN_STAT = false;
 					cout << "Добро пожаловать, " << obmanka.login << "\n";
 					user_core(users, players);
 				}
@@ -239,43 +249,59 @@ void signin(vector<Account>& users, vector<Person>& players)
 		else
 		{
 			cout << "Введите пароль:\n";
-			cout<<"   - ";
-			string pass = enterPass();
+			cout << "   - ";
+			string passw = enterPass();
+			string pass;
 
 			for (int i = 0; i < users.size(); i++)
 			{
-				if (users[i].login == log && users[i].password == pass)
+				if (users[i].login == log)
 				{
-					if (users[i].role == 1)
-						adminstat = true;
-					else
-						adminstat = false;
+					string salt = users[i].salt;
+					pass = sha256(passw + salt);
+					if (pass == users[i].password)
+					{
+						if (users[i].role == 1)
+							ADMIN_STAT = true;
+						else
+							ADMIN_STAT = false;
 
-					if (log == users[0].login)
-						systemAdmin = true;
-					else
-						systemAdmin = false;
+						if (log == users[0].login)
+							SYSTEM_ADMIN = true;
+						else
+							SYSTEM_ADMIN = false;
 
-					system("cls");
-					cout << "Добро пожаловать, " << log << "\n\n";
-					
-					curind = i;
-					
-					flag = false;
-					chooseMenu(users, players);
-					break;
+						system("cls");
+						cout << "Добро пожаловать, " << log << "\n\n";
+
+						CURR_IND = i;
+
+						flag = false;
+						chooseMenu(users, players);
+						break;
+					}
+					else
+					{
+						count++;
+						if (count == 3)
+						{
+							cout << "\nСлишком много неверных попыток!\n";
+							_getch();
+							flag = false;
+							system("cls");
+							break;
+						}
+						else
+						{
+							cout << "\nПроверьте правильность данных\n";
+							cout << "Нажмите любую клавишу чтобы вернуться...";
+							_getch();
+							break;
+						}
+					}
 				}
 				else if (i == users.size() - 1)
 				{
-					count++;
-					if (count == 3)
-					{
-						cout << "\nСлишком много неверных попыток!\n";
-						_getch();
-						flag = false;
-						system("cls");
-						break;
-					}
 					cout << "\nПроверьте правильность данных\n";
 					cout << "Нажмите любую клавишу чтобы вернуться...";
 					_getch();
@@ -331,7 +357,7 @@ string enterPass()
 	char pass[256];
 	int i = 0;
 
-	while(true)
+	while (true)
 	{
 		pass[i] = _getch();
 
@@ -357,7 +383,7 @@ string enterPass()
 			i++;
 		}
 
-		
+
 	}
 	pass[i] = '\0';
 
@@ -370,7 +396,7 @@ string checkNSP(bool& flag)
 
 	for (int i = 0; i < str.length(); i++)
 	{
-		if(str[i] >= 'A' && str[i] <= 'Z' || str[i] >='a' && str[i] <= 'z' || str[i] >= 'А' && str[i] <= 'Я' 
+		if (str[i] >= 'A' && str[i] <= 'Z' || str[i] >= 'a' && str[i] <= 'z' || str[i] >= 'А' && str[i] <= 'Я'
 			|| str[i] >= 'а' && str[i] <= 'я')
 		{
 		}
@@ -426,7 +452,7 @@ int inNum(int min, int max)
 	}
 	return input;
 }
-bool checkForNum(string str)
+bool isNumStr(string str)
 {
 	for (int i = 0; i <= str.length(); i++)
 	{
@@ -443,9 +469,10 @@ bool checkForNum(string str)
 void addAdminAcc(vector<Account>& users)
 {
 	Account obmanka;
-	
+
 	obmanka.login = "admin";
-	obmanka.password = "admin";
+	obmanka.salt = generateSalt(SALT_SIZE);
+	obmanka.password = sha256("admin" + obmanka.salt);
 	obmanka.role = 1;
 
 	users.push_back(obmanka);
@@ -476,7 +503,7 @@ void admin_menu()
 }
 void user_menu()
 {
-	if (adminstat == true)
+	if (ADMIN_STAT == true)
 		cout << "\t-----  User panel  -----\n\n";
 	else
 		cout << "\t-----  Меню  -----\n\n";
@@ -484,8 +511,8 @@ void user_menu()
 	cout << "\t1 - Просмотр\n";
 	cout << "\t2 - Поиск по параметрам\n";
 	cout << "\t3 - Индивидуальное задание\n";
-	
-	if (adminstat == true)
+
+	if (ADMIN_STAT == true)
 	{
 		cout << "\t4 - Добавление\n";
 		cout << "\t5 - Удаление\n";
@@ -538,10 +565,10 @@ void user_core(vector<Account>& users, vector<Person>& players)
 	int item;
 
 	while (flag)
-	{	
+	{
 		user_menu();
 
-		if (adminstat == true)
+		if (ADMIN_STAT == true)
 			item = inNum(0, 7);
 		else
 			item = inNum(0, 3);
@@ -596,7 +623,7 @@ void readFileUsers(vector<Account>& users)
 		bool i = true;
 		while (!fin.eof())
 		{
-			fin >> obmanka.login >> obmanka.password >> obmanka.role;
+			fin >> obmanka.login >> obmanka.password >> obmanka.salt >> obmanka.role;
 			while (i)
 			{
 				if (obmanka.login != "admin" && obmanka.role != 1)
@@ -642,7 +669,7 @@ void writeFileUsers(vector<Account>& users)
 
 	for (int i = 0; i < users.size(); i++)
 	{
-		fout << users[i].login << " " << users[i].password << " " << users[i].role;
+		fout << users[i].login << " " << users[i].password << " " << users[i].salt << " " << users[i].role;
 
 		if (i < users.size() - 1)
 			fout << "\n";
@@ -672,7 +699,7 @@ void writeUsersList(vector<Account>& users)
 {
 	cout << "\n";
 
-	if (systemAdmin == false)
+	if (SYSTEM_ADMIN == false)
 	{
 		cout << "\t| № |   Логин  |   Пароль  | Статус |\n";
 
@@ -688,19 +715,19 @@ void writeUsersList(vector<Account>& users)
 	}
 	else
 	{
-		cout << "\t| № |      Логин     |      Пароль    | Статус |\n";
+		cout << "\t| № |      Логин     |                   Пароль(З А Ш И Ф Р О В А Н О)                 | Статус |\n";
 
 		cout << "\t";
-		palochki(48);
+		palochki(97);
 
 		for (int i = 0; i < users.size(); i++)
 		{
-			cout << "\t|" << setw(3) << i + 1 << "|" << setw(16) << users[i].login << "|" << setw(16) << users[i].password << "|" << setw(8) << users[i].role << "|\n";
+			cout << "\t|" << setw(3) << i + 1 << "|" << setw(16) << users[i].login << "|" << setw(65) << users[i].password << "|" << setw(8) << users[i].role << "|\n";
 			cout << "\t";
-			palochki(48);
+			palochki(97);
 		}
 	}
-		cout << "\n";
+	cout << "\n";
 }
 void writePlayersList(vector<Person>& players)
 {
@@ -713,16 +740,22 @@ void writePlayersList(vector<Person>& players)
 	for (int i = 0; i < players.size(); i++)
 	{
 		cout << "|" << setw(3) << i + 1 << "|" << setw(13) << players[i].surname << "|" << setw(12) << players[i].name << "|" << setw(15) << players[i].patronymic << "|"
-			<< setw(5) << players[i].birth.day << "."; 
+			<< setw(5);
+		if (players[i].birth.day < 10)
+		{
+			cout << "\b";
+			cout << "0";
+		}
+		cout << players[i].birth.day << ".";
 		if (players[i].birth.month < 10)
-			cout << "0"; 
+			cout << "0";
 		cout << players[i].birth.month << "." << players[i].birth.year << "|" << setw(7) << players[i].games << "|" << setw(6)
 			<< players[i].goals << "|" << setw(11) << players[i].assists << "|" << setw(11) << players[i].banMins << "|" << "\n";
 		palochki(101);
 	}
 	cout << "\n";
 }
-void writeSomePlayers(vector<Person>& players, int i)
+void writeSomePlayer(vector<Person>& players, int i)
 {
 	cout << "|" << setw(3) << i + 1 << "|" << setw(13) << players[i].surname << "|" << setw(12) << players[i].name << "|" << setw(15) << players[i].patronymic << "|"
 		<< setw(5) << players[i].birth.day << ".";
@@ -730,8 +763,19 @@ void writeSomePlayers(vector<Person>& players, int i)
 		cout << "0";
 	cout << players[i].birth.month << "." << players[i].birth.year << "|" << setw(7) << players[i].games << "|" << setw(6)
 		<< players[i].goals << "|" << setw(11) << players[i].assists << "|" << setw(11) << players[i].banMins << "|" << "\n";
-		
+
 	palochki(101);
+}
+void writeIndTaskPlayer(vector<Person>& players, int i)
+{
+	cout << "|" << setw(3) << i + 1 << "|" << setw(13) << players[i].surname << "|" << setw(12) << players[i].name << "|" << setw(15) << players[i].patronymic << "|"
+		<< setw(5) << players[i].birth.day << ".";
+	if (players[i].birth.month < 10)
+		cout << "0";
+	cout << players[i].birth.month << "." << players[i].birth.year << "|" << setw(7) << players[i].games << "|" << setw(6)
+		<< players[i].goals << "|" << setw(11) << players[i].assists << "|" << setw(11) << players[i].banMins << "|" << setw(8) << players[i].goals + players[i].assists << "|\n";
+
+	palochki(110);
 }
 
 void showUsers(vector<Account>& users)
@@ -739,7 +783,7 @@ void showUsers(vector<Account>& users)
 	system("cls");
 	cout << "<--Admin panel\n\n";
 
-	cout << "\t\t-----  Список пользователей  -----\n\n";
+	cout << "\t\t\t\t\t-----  Список пользователей  -----\n\n";
 	writeUsersList(users);
 
 	cout << "Нажмите любую клавишу чтобы вернуться...";
@@ -752,7 +796,7 @@ void showPlayers(vector<Person>& players)
 	while (flag)
 	{
 		system("cls");
-		if (adminstat == true)
+		if (ADMIN_STAT == true)
 			cout << "<--User panel\n\n";
 		else
 			cout << "<--Меню\n\n";
@@ -774,20 +818,25 @@ void addUser(vector<Account>& users)
 		system("cls");
 		cout << "<--Admin panel\n\n";
 
-		cout << "\t\t-----  Добавление  -----\n\n";
+		cout << "\t\t\t\t\t\t-----  Добавление  -----\n\n";
 
 		writeUsersList(users);
 		cout << "Чтобы вернуться введите 0\n\n";
 
-		cout << "Введите логин: ";
-		cin >> obmanka.login;
+		cout << "Введите логин:\n";
+		obmanka.login = checkLogPass();
 
 		if (obmanka.login != "0")
 		{
-			cout << "Введите пароль: ";
-			cin >> obmanka.password;
+			cout << "Введите пароль:\n";
+			string pass;
+			pass = checkLogPass();
 
-			if (systemAdmin == true)
+			string salt = generateSalt(SALT_SIZE);
+			obmanka.password = sha256(pass + salt);
+			obmanka.salt = salt;
+
+			if (SYSTEM_ADMIN == true)
 			{
 				cout << "Введите роль: ";
 				obmanka.role = inNum(-100, 100);
@@ -815,7 +864,7 @@ void addPlayer(vector<Person>& players)
 	while (flag)
 	{
 		system("cls");
-		if (adminstat == true)
+		if (ADMIN_STAT == true)
 		{
 			cout << "<--Admin panel\n\n";
 		}
@@ -891,7 +940,7 @@ void delUser(vector<Account>& users)
 		system("cls");
 		cout << "<-- Admin panel\n\n";
 
-		cout << "\t\t-----  Удаление  -----\n\n";
+		cout << "\t\t\t\t\t-----  Удаление  -----\n\n";
 
 		writeUsersList(users);
 		cout << "Какого пользователя вы хотите удалить? Чтобы вернуться введите 0\n\n";
@@ -916,7 +965,7 @@ void delUser(vector<Account>& users)
 
 				if (YN == "Y" || YN == "y")
 				{
-					if (systemAdmin == false && users[index].role == 1 && index != curind)
+					if (SYSTEM_ADMIN == false && users[index].role == 1 && index != CURR_IND)
 					{
 						cout << "Вы не можете удалить другого администратора.\n\n";
 						cout << "Нажмите любую клавишу чтобы вернуться...";
@@ -950,7 +999,7 @@ void delPlayer(vector<Person>& players)
 	while (flag)
 	{
 		system("cls");
-		if (adminstat == true)
+		if (ADMIN_STAT == true)
 			cout << "<-- User panel\n\n";
 		else
 			cout << "<-- Меню\n\n";
@@ -1007,7 +1056,7 @@ void updUser(vector<Account>& users)
 	{
 		system("cls");
 		cout << "<-- Admin panel\n\n";
-		cout << "\t\t-----  Редактирование  -----\n\n";
+		cout << "\t\t\t\t\t-----  Редактирование  -----\n\n";
 
 		writeUsersList(users);
 		cout << "Какого пользователя вы хотите редактировать? Чтобы вернуться введите 0\n\n";
@@ -1026,7 +1075,7 @@ void updUser(vector<Account>& users)
 
 			bool blag = true;
 
-			if (systemAdmin == false && users[index].role == 1 && index != curind)
+			if (SYSTEM_ADMIN == false && users[index].role == 1 && index != CURR_IND)
 			{
 				cout << "Вы не можете редактировать другого администратора.\n\n";
 				cout << "Нажмите любую клавишу чтобы вернуться...";
@@ -1041,7 +1090,7 @@ void updUser(vector<Account>& users)
 				cout << "\t-----  Данные пользователя  -----\n\n";
 
 				cout << "\t1 - Логин: " << users[index].login << "\n";
-				cout << "\t2 - Пароль: " << users[index].password << "\n";
+				cout << "\t2 - Пароль: ********\n";
 				cout << "\t3 - Роль: " << users[index].role << "\n";
 				cout << "\t0 - Назад\n\n";
 
@@ -1057,22 +1106,26 @@ void updUser(vector<Account>& users)
 				}
 				case 1:
 				{
-					cout << "Новый логин >> ";
-					cin >> users[index].login;
+					cout << "Новый логин:\n";
+					users[index].login = checkLogPass();
 
 					break;
 				}
 				case 2:
 				{
-					cout << "Новый пароль: >> ";
-					cin >> users[index].password;
+					cout << "Новый пароль:\n";
+					string pass;
+					pass = checkLogPass();
+					string salt = generateSalt(SALT_SIZE);
+					users[index].password  = sha256(pass + salt);
+					users[index].salt = salt;
 
 					break;
 				}
 				case 3:
 				{
-					cout << "Новая роль ";
-					users[index].role = inNum(0,1);
+					cout << "Новая роль:\n";
+					users[index].role = inNum(0, 1);
 
 					break;
 				}
@@ -1091,7 +1144,7 @@ void updatePlayer(vector<Person>& players)
 	while (flag)
 	{
 		system("cls");
-		if (adminstat == true)
+		if (ADMIN_STAT == true)
 			cout << "<-- User panel\n\n";
 		else
 			cout << "<-- Меню\n\n";
@@ -1101,7 +1154,7 @@ void updatePlayer(vector<Person>& players)
 		writePlayersList(players);
 
 		cout << "Какого игрока вы хотите редактировать? Чтобы вернуться введите 0\n\n";
-		
+
 		int index;
 		index = inNum(0, players.size());
 
@@ -1119,13 +1172,19 @@ void updatePlayer(vector<Person>& players)
 			{
 				system("cls");
 				cout << "<-- Редактирование\n\n";
-				
+
 				cout << "\t\t----- Данные игрока  -----\n\n";
 
 				cout << "\t1 - Фамилия: " << players[index].surname << "\n";
 				cout << "\t2 - Имя: " << players[index].name << "\n";
 				cout << "\t3 - Отчество: " << players[index].patronymic << "\n";
-				cout << "\t4 - Дата рождения: " << players[index].birth.day << "." << players[index].birth.month << "." << players[index].birth.year << "\n";
+				cout << "\t4 - Дата рождения: ";
+				if (players[index].birth.day < 10)
+					cout << "0";
+				cout << players[index].birth.day << ".";
+				if (players[index].birth.month < 10)
+					cout << "0"; 
+				cout << players[index].birth.month << "." << players[index].birth.year << "\n";
 				cout << "\t5 - Количество матчей: " << players[index].games << "\n";
 				cout << "\t6 - Число заброшенных шайб: " << players[index].goals << "\n";
 				cout << "\t7 - Количество голевых передач: " << players[index].assists << "\n";
@@ -1266,7 +1325,7 @@ void indTask(vector<Person>& players)
 			}
 		}
 	}
-	
+
 
 	for (int i = 1; i < uniqRes; i++) // Сортировка результативностей по убыванию
 	{
@@ -1281,22 +1340,22 @@ void indTask(vector<Person>& players)
 
 	system("cls");
 
-	if (adminstat == true)
+	if (ADMIN_STAT == true)
 		cout << "<--User panel\n\n";
 	else
 		cout << "<--Меню\n\n";
 
 	cout << "\t\t\t\t-----  Индивидуальное задание  -----\n\n";
 
-	cout << "| № |   Фамилия   |     Имя    |    Отчество   |  Дата рожд. | Матчи | Голы | Гол. пер. | Штр. мин. |" << "\n";
-	palochki(101);
+	cout << "| № |   Фамилия   |     Имя    |    Отчество   |  Дата рожд. | Матчи | Голы | Гол. пер. | Штр. мин. | Рез-ть |" << "\n";
+	palochki(110);
 	for (int i = 0; i < uniqRes; i++)
 	{
 		for (int j = 0; j < players.size(); j++)
 		{
 			if (resultArr[i] == players[j].assists + players[j].goals)
 			{
-				writeSomePlayers(players, j);
+				writeIndTaskPlayer(players, j);
 				count++;
 			}
 			if (count == 6)
@@ -1344,7 +1403,7 @@ void sortSurname(vector<Person>& players)
 	{
 		for (int j = 0; j < players.size() - i; j++)
 		{
-			if (players[j].surname > players[j+1].surname)
+			if (players[j].surname > players[j + 1].surname)
 			{
 				swap(players[j], players[j + 1]);
 			}
@@ -1387,7 +1446,7 @@ void search(vector<Person>& players)
 	{
 		system("cls");
 
-		if (adminstat == true)
+		if (ADMIN_STAT == true)
 			cout << "<--User panel\n\n";
 		else
 			cout << "<--Меню\n\n";
@@ -1426,7 +1485,7 @@ void search(vector<Person>& players)
 void searchSurname(vector<Person>& players)
 {
 	bool flag = true;
-	
+
 	while (flag)
 	{
 		system("cls");
@@ -1478,7 +1537,7 @@ void searchSurname(vector<Person>& players)
 
 				if (match == true)
 				{
-					writeSomePlayers(players, i);
+					writeSomePlayer(players, i);
 					n++;
 					match = false;
 				}
@@ -1517,7 +1576,7 @@ void searchGoals(vector<Person>& players)
 		{
 			flag = false;
 		}
-		else if (checkForNum(vvod) == true)
+		else if (isNumStr(vvod) == true)
 		{
 			int goals = stoi(vvod);
 
@@ -1535,7 +1594,7 @@ void searchGoals(vector<Person>& players)
 			{
 				if (players[i].goals == goals)
 				{
-					writeSomePlayers(players, i);
+					writeSomePlayer(players, i);
 					n++;
 				}
 			}
@@ -1574,7 +1633,7 @@ void searchMatches(vector<Person>& players)
 		{
 			flag = false;
 		}
-		else if (checkForNum(vvod) == true)
+		else if (isNumStr(vvod) == true)
 		{
 			int games = stoi(vvod);
 
@@ -1593,7 +1652,7 @@ void searchMatches(vector<Person>& players)
 			{
 				if (players[i].games == games)
 				{
-					writeSomePlayers(players, i);
+					writeSomePlayer(players, i);
 					n++;
 				}
 			}
@@ -1609,4 +1668,39 @@ void searchMatches(vector<Person>& players)
 
 		}
 	}
+}
+
+string generateSalt(int salt_size)
+{
+	string symbols = getSymbolsForSalt();
+
+	srand(time(NULL));
+
+	string salt;
+	salt.reserve(salt_size);
+
+	for (int i = 0; i < salt_size; i++)
+	{
+		salt.push_back(symbols[rand() % SYMBOLS_SIZE]);
+	}
+
+	return salt;
+}
+string getSymbolsForSalt()
+{
+	string symbols;
+	symbols.reserve(SYMBOLS_SIZE);
+
+	char little_letter = 'a';
+	char big_letter = 'A';
+	char number = '0';
+	int i = 0;
+	for (int k = 0; k < 26; k++)
+	{
+		symbols.push_back(little_letter++);
+		symbols.push_back(big_letter++);
+		if (k < 10) symbols.push_back(number++);
+	}
+
+	return symbols;
 }
